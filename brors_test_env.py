@@ -267,8 +267,12 @@ class FlappyBirdEnv:
         return self.get_state(), reward, done, {'score': self.score}
 
     def close(self):
-        """Clean up the Pygame environment."""
-        pygame.quit()
+   
+        try:
+            pygame.display.quit()
+            pygame.quit()
+        except:
+            pass
 
 if __name__ == "__main__":
     env = FlappyBirdEnv()
