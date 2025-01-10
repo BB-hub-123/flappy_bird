@@ -46,7 +46,7 @@ def train_dqn(buffer_capacity=100000, save_frequency=1000):
     replay_buffer = ReplayBuffer(capacity=buffer_capacity)
     
     # Training parameters
-    num_episodes = 1000
+    num_episodes = 2000
     max_steps = 1000
     
     # Tracking metrics
@@ -112,7 +112,7 @@ def train_dqn(buffer_capacity=100000, save_frequency=1000):
             replay_buffer.save(episode)
         
         # Print progress
-        if episode % 1000 == 0:
+        if episode % 2000 == 0:
             avg_reward = np.mean(episode_rewards[-100:])
             avg_length = np.mean(episode_lengths[-100:])
             print(f"Episode: {episode}")
