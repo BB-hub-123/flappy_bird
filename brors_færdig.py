@@ -9,7 +9,6 @@ from collections import deque
 import matplotlib.pyplot as plt
 from IPython.display import clear_output
 
-
 from brors_agent import DQNAgent
 from brors_test_env import FlappyBirdEnv
 from replay_buffer import ReplayBuffer
@@ -33,6 +32,7 @@ def plot_training_results(episode_rewards, episode_lengths, window=100):
     plt.tight_layout()
     plt.show()
 
+
 def train_dqn(buffer_capacity=100000, save_frequency=1000):
     # Initialize environment and agent
     env = FlappyBirdEnv(decision_frequency=4, speed_multiplier=2)
@@ -54,13 +54,13 @@ def train_dqn(buffer_capacity=100000, save_frequency=1000):
     episode_lengths = []
     best_reward = float('-inf')
     
-    # Training loop
-    for episode in range(num_episodes):
-        state = env.reset()
-        episode_reward = 0
-        episode_length = 0
-        
-        try:
+    try:
+        # Training loop
+        for episode in range(num_episodes):
+            state = env.reset()
+            episode_reward = 0
+            episode_length = 0
+            
             for step in range(max_steps):
                 # Select action
                 action = agent.act(state)
@@ -83,6 +83,7 @@ def train_dqn(buffer_capacity=100000, save_frequency=1000):
                 
                 if done:
                     break
+<<<<<<< HEAD
                     
         except Exception as e:
             print(f"Error during training: {e}")
@@ -121,10 +122,56 @@ def train_dqn(buffer_capacity=100000, save_frequency=1000):
             print(f"Epsilon: {agent.epsilon:.3f}")
             print(f"Replay Buffer Size: {len(replay_buffer)}")
             print("----------------------------------------")
+=======
+>>>>>>> 837812bedf4c97e9ecbe4c3fa658ee646c5e95fd
             
-            # Plot progress
-            plot_training_results(episode_rewards, episode_lengths)
+            # Update target network periodically
+            if episode % agent.target_update == 0:
+                agent.update_target_network()
             
+            # Track progress
+            episode_rewards.append(episode_reward)
+            episode_lengths.append(episode_length)
+            
+            # Save best model
+            if episode_reward > best_reward:
+                best_reward = episode_reward
+                torch.save({
+                    'episode': episode,
+                    'model_state_dict': agent.policy_net.state_dict(),
+                    'optimizer_state_dict': agent.optimizer.state_dict(),
+                    'reward': best_reward,
+                }, 'best_flappy_model.pth')
+            
+            # Save replay buffer periodically
+            if episode > 0 and episode % save_frequency == 0:
+                replay_buffer.save(episode)
+            
+            # Print progress
+            if (episode + 1) % 100 == 0:  # More frequent updates
+                avg_reward = np.mean(episode_rewards[-100:])
+                avg_length = np.mean(episode_lengths[-100:])
+                print(f"Episode: {episode + 1}/{num_episodes}")  # Add total episodes for clarity
+                print(f"Average Reward (last 100): {avg_reward:.2f}")
+                print(f"Average Length (last 100): {avg_length:.2f}")
+                print(f"Epsilon: {agent.epsilon:.3f}")
+                print(f"Replay Buffer Size: {len(replay_buffer)}")
+                print("----------------------------------------")
+                
+                # Plot progress
+                plot_training_results(episode_rewards, episode_lengths)
+            
+            # Check if we've reached the episode limit
+            if episode + 1 >= num_episodes:
+                print("Reached episode limit. Training complete.")
+                break
+                
+    except Exception as e:
+        print(f"Error during training: {e}")
+        raise e
+    finally:
+        env.close()
+        
     return agent, episode_rewards, episode_lengths, replay_buffer
 
 def test_agent(agent, num_episodes=5):
@@ -152,7 +199,7 @@ def test_agent(agent, num_episodes=5):
 if __name__ == "__main__":
     try:
         # Set random seeds for reproducibility
-        random.seed(42)
+        random.seed(42) 
         np.random.seed(42)
         torch.manual_seed(42)
         
