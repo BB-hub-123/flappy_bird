@@ -5,7 +5,7 @@ import sys
 import os
 
 class FlappyBirdEnv:
-    def __init__(self, decision_frequency=4, speed_multiplier=1):
+    def __init__(self, decision_frequency=4, speed_multiplier=50):
         """
         Initialize the environment.
         Args:
@@ -22,7 +22,7 @@ class FlappyBirdEnv:
         self.decision_interval = 1000 / decision_frequency  # milliseconds between decisions
         self.last_decision_time = 0
         self.speed_multiplier = speed_multiplier
-        self.base_fps = 120  # Original FPS
+        self.base_fps = 120  # Original FPS #Ændret fra 120
 
         # Game variables
         self.gravity = 0.125

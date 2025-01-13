@@ -36,10 +36,11 @@ class DQNAgent:
         self.epsilon = 1.0  # exploration rate
         self.epsilon_min = 0.01
         self.epsilon_decay = 0.995
-        self.learning_rate = 0.001 #ændret fra 0.001
+        self.learning_rate = 0.001
         self.target_update = 10  # update target network every N episodes
         
         self.optimizer = optim.Adam(self.policy_net.parameters(), lr=self.learning_rate)
+        self.criterion = nn.MSELoss()
         
     def act(self, state):
         if random.random() < self.epsilon:
@@ -51,27 +52,24 @@ class DQNAgent:
             return q_values.argmax().item()
 
     def train_on_batch(self, states, actions, rewards, next_states, dones):
-        """Train on a batch of experiences"""
-        # Move everything to device
-        states = states.to(self.device)
-        actions = actions.to(self.device)
-        rewards = rewards.to(self.device)
-        next_states = next_states.to(self.device)
-        dones = dones.to(self.device)
+        # Convert numpy arrays to tensors and move to device
+        states = torch.FloatTensor(states).to(self.device)
+        next_states = torch.FloatTensor(next_states).to(self.device)
+        rewards = torch.FloatTensor(rewards).to(self.device)
+        actions = torch.LongTensor(actions).to(self.device)
+        dones = torch.FloatTensor(dones).to(self.device)
 
-        # Compute current Q values
+        # Get current Q values
         current_q_values = self.policy_net(states).gather(1, actions.unsqueeze(1))
-        
-        # Compute next Q values
+
+        # Compute target Q values
         with torch.no_grad():
             next_q_values = self.target_net(next_states).max(1)[0]
-        
-        # Compute expected Q values
-        expected_q_values = rewards + (1 - dones) * self.gamma * next_q_values
-        
+            target_q_values = rewards + (1 - dones) * self.gamma * next_q_values
+
         # Compute loss
-        loss = nn.MSELoss()(current_q_values.squeeze(), expected_q_values)
-        
+        loss = self.criterion(current_q_values.squeeze(), target_q_values)
+
         # Optimize the model
         self.optimizer.zero_grad()
         loss.backward()
@@ -79,8 +77,8 @@ class DQNAgent:
 
         # Update epsilon
         self.epsilon = max(self.epsilon_min, self.epsilon * self.epsilon_decay)
-        
-        return loss.item()
+
+        return loss.item()  # Return the loss value
 
     def update_target_network(self):
         """Update the target network with the policy network's weights"""
