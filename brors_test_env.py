@@ -133,42 +133,61 @@ class FlappyBirdEnv:
                     passed_pipes.add(pipe_id)
                     # self.score_sound.play()
         return score
-
     def get_state(self):
         """Get the current state for RL."""
         if not self.pipe_list:
             next_pipe_dist_x = 288
             next_pipe_top_y = 0
             next_pipe_bottom_y = 0
+            next_next_pipe_top_y = 0
+            next_next_pipe_bottom_y = 0
         else:
             next_pipe = None
-            for pipe in self.pipe_list:
-                if pipe.centerx > self.bird_rect.centerx:
-                    if pipe.bottom >= 512:  # Bottom pipe
-                        next_pipe = pipe
-                        break
+            next_next_pipe = None
+            bottom_pipes = []
             
-            if next_pipe:
+            # Collect bottom pipes ahead of the bird
+            for pipe in self.pipe_list:
+                if pipe.centerx > self.bird_rect.centerx and pipe.bottom >= 512:  # Bottom pipe
+                    bottom_pipes.append(pipe)
+            
+            # Sort pipes by x position
+            bottom_pipes.sort(key=lambda x: x.centerx)
+            
+            # Get next and next-next pipes if they exist
+            if len(bottom_pipes) > 0:
+                next_pipe = bottom_pipes[0]
                 next_pipe_dist_x = next_pipe.centerx - self.bird_rect.centerx
                 next_pipe_top_y = next_pipe.top - 150
                 next_pipe_bottom_y = next_pipe.bottom
+                
+                if len(bottom_pipes) > 1:
+                    next_next_pipe = bottom_pipes[1]
+                    next_next_pipe_top_y = next_next_pipe.top - 150
+                    next_next_pipe_bottom_y = next_next_pipe.bottom
+                else:
+                    next_next_pipe_top_y = 0
+                    next_next_pipe_bottom_y = 0
             else:
                 next_pipe_dist_x = 288
                 next_pipe_top_y = 0
                 next_pipe_bottom_y = 0
+                next_next_pipe_top_y = 0
+                next_next_pipe_bottom_y = 0
 
         state = np.array([
             self.bird_rect.centery,
             self.bird_movement,
             next_pipe_dist_x,
             next_pipe_top_y,
-            next_pipe_bottom_y
+            next_pipe_bottom_y,
+            next_next_pipe_top_y,
+            next_next_pipe_bottom_y
         ])
         return state
-
     def reset(self):
         """Reset the environment for a new episode."""
-        self.game_active = True
+        self.game_active = True  # Make sure game is active
         self.pipe_list.clear()
         self.bird_rect.center = (50, 206)
         self.bird_movement = 0
@@ -181,8 +200,19 @@ class FlappyBirdEnv:
         # Create initial pipe
         self.pipe_list.extend(self.create_pipe())
         
-        return self.get_state()
-
+        # Handle any pending events to prevent freeze
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+        
+        # Force a step to start the game
+        self.bird_movement = -5  # Initial jump to start the game
+        
+        # Get initial state
+        initial_state = self.get_state()
+        
+        return initial_state
     def step(self, action):
         """Execute one step in the environment."""
         current_time = pygame.time.get_ticks()
