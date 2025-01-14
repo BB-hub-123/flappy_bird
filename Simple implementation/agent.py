@@ -39,12 +39,12 @@ class DQNAgent:
         self.gamma = 0.99
         self.epsilon = 1.0
         self.epsilon_min = 0.01
-        self.epsilon_decay = 0.999995
-        self.target_update = 10
+        self.epsilon_decay = 0.9995
+        self.target_update = 5
         self.learning_rate = learning_rate
         
         self.optimizer = optim.Adam(self.policy_net.parameters(), lr=self.learning_rate)
-        self.criterion = nn.SmoothL1Loss()  # Huber Loss (Smooth L1 loss)
+        self.criterion = nn.MSELoss()  
 
     def act(self, state):
         if random.random() < self.epsilon:
@@ -69,7 +69,8 @@ class DQNAgent:
         rewards = torch.FloatTensor(rewards).to(self.device)
         actions = torch.LongTensor(actions).to(self.device)
         dones = torch.FloatTensor(dones).to(self.device)
-
+        #normaliserer belønning:
+        
         current_q = self.policy_net(states)
         current_q_values = current_q.gather(1, actions.unsqueeze(1)).squeeze()
 

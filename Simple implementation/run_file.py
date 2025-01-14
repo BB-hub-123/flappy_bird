@@ -34,17 +34,10 @@ class ReplayBuffer:
         #returnerer antal gemte elementer i bufferen
 
 # Training settings
-<<<<<<< HEAD
-EPISODES = 1400     #antal spil der spilles
-BATCH_SIZE = 32     #antal spiloplevelser der brues til træning i hvert skridt
-BUFFER_CAPACITY = 10000     #maksimalt antal spilopelvelser replay-bufferen kan gemme
-PRINT_INTERVAL = 100  # How often to print and plot
-=======
 EPISODES = 10000
-BATCH_SIZE = 62
+BATCH_SIZE = 64
 BUFFER_CAPACITY = 10000
 PRINT_INTERVAL = 50  # How often to print and plot
->>>>>>> 6b7c2abf4ef633ad9bf03d8de11dd91a5f7bd353
 
 # Initialize everything
 env = FlappyBird()      #opretter spillets miljø ved at hente 
