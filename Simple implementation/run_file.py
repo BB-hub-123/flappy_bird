@@ -6,31 +6,41 @@ import random
 import matplotlib.pyplot as plt
 from simpel_spil import FlappyBird
 from agent import DQNAgent
+#importerer nødevendige moduler og klasser
 
 # Simple replay buffer 
 class ReplayBuffer:
+    #class der lagrer tidligere spiloplevelser
     def __init__(self, capacity):
         self.buffer = deque(maxlen=capacity)
-    
+        #der sættes en øvre grænse for hvor mange spilgentagelser der kan gemmes (capacity)
+        #deque funktionen af max capacity gør, at når capacity er fyldt, at det ældste info ryger og erstattes
+            #deque står for double-ended queue
+
     def push(self, state, action, reward, next_state, done):
         self.buffer.append((state, action, reward, next_state, done))
-    
+        #tilføjer en ny spiloplevelse, som en tuple, til bufferen
+
     def sample(self, batch_size):
         batch = random.sample(self.buffer, min(batch_size, len(self.buffer)))
+        #trækker tilfældig batch fra bufferen, hvis bufferen er for lille, tages så mange elementer som muligt
         states, actions, rewards, next_states, dones = zip(*batch)
+        #splitter spiloplevelsen op i 5 arrays 
         return np.array(states), np.array(actions), np.array(rewards), np.array(next_states), np.array(dones)
-    
+        #konverterer til numpy for effektivisering
+
     def __len__(self):
         return len(self.buffer)
+        #returnerer antal gemte elementer i bufferen
 
 # Training settings
-EPISODES = 1400
-BATCH_SIZE = 32
-BUFFER_CAPACITY = 10000
+EPISODES = 1400     #antal spil der spilles
+BATCH_SIZE = 32     #antal spiloplevelser der brues til træning i hvert skridt
+BUFFER_CAPACITY = 10000     #maksimalt antal spilopelvelser replay-bufferen kan gemme
 PRINT_INTERVAL = 100  # How often to print and plot
 
 # Initialize everything
-env = FlappyBird()
+env = FlappyBird()      #opretter spillets miljø ved at hente 
 agent = DQNAgent(state_size=5, action_size=2, hidden_size=64)  # Fixed state_size to 5
 replay_buffer = ReplayBuffer(BUFFER_CAPACITY)
 
