@@ -38,9 +38,9 @@ class FlappyBirdEnv:
         self.floor_x_pos = 0
 
         # Bird setup
-        bird_downflap = pygame.image.load('assets/bluebird-downflap.png').convert_alpha()
-        bird_midflap = pygame.image.load('assets/bluebird-midflap.png').convert_alpha()
-        bird_upflap = pygame.image.load('assets/bluebird-upflap.png').convert_alpha()
+        bird_downflap = pygame.image.load('assets/yellowbird-downflap.png').convert_alpha()
+        bird_midflap = pygame.image.load('assets/yellowbird-midflap.png').convert_alpha()
+        bird_upflap = pygame.image.load('assets/yellowbird-upflap.png').convert_alpha()
         self.bird_frames = [bird_downflap, bird_midflap, bird_upflap]
         self.bird_index = 0
         self.bird_surface = self.bird_frames[self.bird_index]
@@ -49,7 +49,7 @@ class FlappyBirdEnv:
         # Pipe setup
         self.pipe_surface = pygame.image.load('assets/pipe-green.png').convert()
         self.pipe_list = []
-        self.pipe_height = [300]
+        self.pipe_height = [300]    #sørger for at rørene har samme højde, hver gang
 
         # Game over surface
         self.game_over_surface = pygame.image.load('assets/message.png').convert_alpha()
@@ -66,7 +66,7 @@ class FlappyBirdEnv:
         
         # Pipe spawning variables
         self.pipe_spawn_time = 0
-        self.PIPE_SPAWN_INTERVAL = 1200
+        self.PIPE_SPAWN_INTERVAL = 800   #ændret forhåbentlig afstanden mellem rør
 
     def draw_floor(self):
         self.screen.blit(self.floor_surface, (self.floor_x_pos, 450))

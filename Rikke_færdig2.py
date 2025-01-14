@@ -15,6 +15,10 @@ from replay_buffer import ReplayBuffer
 
 def plot_training_results(episode_rewards, episode_lengths, window=100):
     """Plot the training progress."""
+    if len(episode_rewards) < window or len(episode_lengths) < window:
+        print("Not enough data to plot training results yet.")
+        return
+
     plt.figure(figsize=(12, 4))
     
     plt.subplot(121)
@@ -31,7 +35,6 @@ def plot_training_results(episode_rewards, episode_lengths, window=100):
     
     plt.tight_layout()
     plt.show()
-
 
 def train_dqn(buffer_capacity=100000, save_frequency=1000):
     # Initialize environment and agent
@@ -83,53 +86,11 @@ def train_dqn(buffer_capacity=100000, save_frequency=1000):
                 
                 if done:
                     break
-                    
-    except Exception as e:
-        print(f"Error during training: {e}")
-        env.close()
-        sys.exit(1)
-    
-        # Update target network periodically
-        if episode % agent.target_update == 0:
-            agent.update_target_network()
-        
-        # Track progress
-        episode_rewards.append(episode_reward)
-        episode_lengths.append(episode_length)
-        
-        # Save best model
-        if episode_reward > best_reward:
-            best_reward = episode_reward
-            torch.save({
-                'episode': episode,
-                'model_state_dict': agent.policy_net.state_dict(),
-                'optimizer_state_dict': agent.optimizer.state_dict(),
-                'reward': best_reward,
-            }, 'best_flappy_model.pth')
-        
-        # Save replay buffer periodically
-        if episode > 0 and episode % save_frequency == 0:
-            replay_buffer.save(episode)
-        
-        # Print progress
-        if episode % 1000 == 0:
-            avg_reward = np.mean(episode_rewards[-100:])
-            avg_length = np.mean(episode_lengths[-100:])
-            print(f"Episode: {episode}")
-            print(f"Average Reward (last 100): {avg_reward:.2f}")
-            print(f"Average Length (last 100): {avg_length:.2f}")
-            print(f"Epsilon: {agent.epsilon:.3f}")
-            print(f"Replay Buffer Size: {len(replay_buffer)}")
-            print("----------------------------------------")
-            
-            # Update target network periodically
-            if episode % agent.target_update == 0:
-                agent.update_target_network()
             
             # Track progress
             episode_rewards.append(episode_reward)
             episode_lengths.append(episode_length)
-            
+
             # Save best model
             if episode_reward > best_reward:
                 best_reward = episode_reward
@@ -141,14 +102,22 @@ def train_dqn(buffer_capacity=100000, save_frequency=1000):
                 }, 'best_flappy_model.pth')
             
             # Save replay buffer periodically
-            if episode > 0 and episode % save_frequency == 0:
+            if len(replay_buffer) > 0 and episode > 0 and episode % save_frequency == 0:
                 replay_buffer.save(episode)
             
             # Print progress
-            if (episode + 1) % 100 == 0:  # More frequent updates
-                avg_reward = np.mean(episode_rewards[-100:])
-                avg_length = np.mean(episode_lengths[-100:])
-                print(f"Episode: {episode + 1}/{num_episodes}")  # Add total episodes for clarity
+            if (episode + 1) % 100 == 0:
+                if len(episode_rewards) > 0:
+                    avg_reward = np.mean(episode_rewards[-100:])
+                else:
+                    avg_reward = 0
+
+                if len(episode_lengths) > 0:
+                    avg_length = np.mean(episode_lengths[-100:])
+                else:
+                    avg_length = 0
+
+                print(f"Episode: {episode + 1}/{num_episodes}")
                 print(f"Average Reward (last 100): {avg_reward:.2f}")
                 print(f"Average Length (last 100): {avg_length:.2f}")
                 print(f"Epsilon: {agent.epsilon:.3f}")
@@ -157,19 +126,15 @@ def train_dqn(buffer_capacity=100000, save_frequency=1000):
                 
                 # Plot progress
                 plot_training_results(episode_rewards, episode_lengths)
-            
-            # Check if we've reached the episode limit
-            if episode + 1 >= num_episodes:
-                print("Reached episode limit. Training complete.")
-                return
-                
+        
+        print("Training complete.")
+        return agent, episode_rewards, episode_lengths, replay_buffer
+
     except Exception as e:
         print(f"Error during training: {e}")
         raise e
     finally:
         env.close()
-        
-    return agent, episode_rewards, episode_lengths, replay_buffer
 
 def test_agent(agent, num_episodes=5):
     """Test the trained agent."""
