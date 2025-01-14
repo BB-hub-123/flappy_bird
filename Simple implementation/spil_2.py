@@ -4,7 +4,7 @@ import numpy as np
 class FlappyBird:
     # Game settings
     actions = [0, 1]  # 0: do nothing, 1: flap
-    fps = 30
+    fps = 300
     
     # Colors
     birdColor = (255, 255, 0)    # Yellow
