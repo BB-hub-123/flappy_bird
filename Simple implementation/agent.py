@@ -35,7 +35,7 @@ class DQNAgent:
         self.target_net.load_state_dict(self.policy_net.state_dict())
         
         # Training parameters
-        self.batch_size = 32
+        self.batch_size = 64
         self.gamma = 0.99
         self.epsilon = 1.0
         self.epsilon_min = 0.01

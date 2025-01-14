@@ -25,9 +25,9 @@ class ReplayBuffer:
 
 # Training settings
 EPISODES = 10000
-BATCH_SIZE = 62
+BATCH_SIZE = 64
 BUFFER_CAPACITY = 10000
-PRINT_INTERVAL = 50  # How often to print and plot
+PRINT_INTERVAL = 100  # How often to print and plot
 
 # Initialize everything
 env = FlappyBird()
