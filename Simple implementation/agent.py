@@ -19,7 +19,7 @@ class DQN(nn.Module):
         return self.network(x)
 
 class DQNAgent:
-    def __init__(self, state_size=5, action_size=2, hidden_size=64):  # Changed default state_size to 5
+    def __init__(self, state_size=5, action_size=2, hidden_size=64, learning_rate=0.001):  # Added learning_rate parameter
         self.state_size = state_size
         self.action_size = action_size
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -36,8 +36,9 @@ class DQNAgent:
         self.epsilon_min = 0.01
         self.epsilon_decay = 0.995
         self.target_update = 10
+        self.learning_rate = learning_rate  # Store learning rate as instance variable
         
-        self.optimizer = optim.Adam(self.policy_net.parameters())
+        self.optimizer = optim.Adam(self.policy_net.parameters(), lr=self.learning_rate)  # Use learning rate in optimizer
         self.criterion = nn.MSELoss()
 
     def act(self, state):
