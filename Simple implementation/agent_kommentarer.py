@@ -67,9 +67,11 @@ class DQNAgent:
             state = torch.FloatTensor(state).unsqueeze(0).to(self.device)
             q_values = self.policy_net(state)
             return q_values.argmax().item()
-        #explotation - bereg
+        #exploitation - beregner Q-værdien for aktuelle tilstand, og vælger handling med højest Q-værdi baseret på tidligere erfaring  
     
     def train_on_batch(self, states, actions, rewards, next_states, dones):
+        #definerer træningsfunktion, der arbejder ud fra batches
+
         # Convert to numpy arrays first
         states = np.array(states)
         next_states = np.array(next_states)
@@ -89,20 +91,28 @@ class DQNAgent:
         # Get current Q values
         current_q = self.policy_net(states)
         current_q_values = current_q.gather(1, actions.unsqueeze(1)).squeeze()
+        #gather = henter Q-værdierne for de handlinger agenten faktisk tog
 
         # Get target Q values
         with torch.no_grad():
             next_q_values = self.target_net(next_states).max(1)[0]
+            #maksimale q-værdier fra target netværket for næste tilstande
             target_q_values = rewards + (1 - dones) * self.gamma * next_q_values
+            #beregnes som belønning + fremtidig værdi baseret på gamma og fremtidig værdi
+            # done = 0, hvis man er død, = 1, hvis man er i live
+                # (1-dones) gør således, at hvis man dør, at kun den umiddelbare belønning tæller 
 
         # Compute loss and optimize
         loss = self.criterion(current_q_values, target_q_values)
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
+        # beregner tabet mellem forudagte og målte Q-værdier
+        # opdaterer netværkets vægte for at mindske tabet
 
         # Update epsilon
         self.epsilon = max(self.epsilon_min, self.epsilon * self.epsilon_decay)
+        # opdaterer epsilon ved at tage maks-værdien af enten mindste epsilon, som vi har at sat til 0.01, eller epsilon (rekursiv) * epsilon decay
 
         return loss.item()
 
