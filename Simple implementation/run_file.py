@@ -24,10 +24,10 @@ class ReplayBuffer:
         return len(self.buffer)
 
 # Training settings
-EPISODES = 1400
-BATCH_SIZE = 32
+EPISODES = 10000
+BATCH_SIZE = 62
 BUFFER_CAPACITY = 10000
-PRINT_INTERVAL = 100  # How often to print and plot
+PRINT_INTERVAL = 50  # How often to print and plot
 
 # Initialize everything
 env = FlappyBird()
@@ -35,10 +35,10 @@ agent = DQNAgent(state_size=5, action_size=2, hidden_size=64)  # Fixed state_siz
 replay_buffer = ReplayBuffer(BUFFER_CAPACITY)
 
 # Lists for tracking metrics
-scores = []
-losses = []
-steps_per_episode = []
-best_score = float('-inf')
+scores = []  # List to track scores
+losses = []  # List to track losses
+steps_per_episode = []  # List to track steps per episode
+best_score = float('-inf')  # Keep track of the best score
 
 # Training loop
 try:
@@ -73,7 +73,7 @@ try:
             steps += 1
             
             # Render every nth episode
-            if episode % 100 == 0:
+            if episode % 50 == 0:
                 env.render()
                 pygame.event.pump()
             
@@ -102,15 +102,16 @@ try:
                 'epsilon': agent.epsilon
             }, 'flappy_best_model.pth')
         
-        # Print and plot progress
+        # Print and plot progress every PRINT_INTERVAL episodes
         if (episode + 1) % PRINT_INTERVAL == 0:
-            avg_score = np.mean(scores[-PRINT_INTERVAL:])
-            avg_steps = np.mean(steps_per_episode[-PRINT_INTERVAL:])
+            # Calculate average score over the last PRINT_INTERVAL episodes
+            avg_score = np.mean(scores[-PRINT_INTERVAL:]) if len(scores) >= PRINT_INTERVAL else np.mean(scores)
+            avg_steps = np.mean(steps_per_episode[-PRINT_INTERVAL:]) if len(steps_per_episode) >= PRINT_INTERVAL else np.mean(steps_per_episode)
             print(f"Episode: {episode+1}, Avg Score: {avg_score:.2f}, Avg Steps: {avg_steps:.1f}, Epsilon: {agent.epsilon:.3f}")
             
             # Plot metrics
             plt.figure(1)
-            plt.clf()
+            plt.clf()  # Clear the previous plot
             plt.subplot(311)
             plt.plot(scores, '.')
             plt.title(f'Training Progress (ε={agent.epsilon:.3f})')
@@ -128,43 +129,12 @@ try:
             plt.ylabel('Loss')
             plt.grid(True)
             
-            plt.pause(0.1)
+            plt.pause(0.1)  # Pause to allow the plot to update
 
 except KeyboardInterrupt:
     print("\nTraining interrupted by user")
 finally:
-    env.close()
+    env.close()  # Close the environment and quit pygame
     pygame.quit()
 
-# To load and play with the best model:
 
-def play_flappy():
-    env = FlappyBird()
-    agent = DQNAgent(state_size=5, action_size=2, hidden_size=64)
-    
-    # Load the best model
-    checkpoint = torch.load('flappy_best_model.pth')
-    agent.policy_net.load_state_dict(checkpoint['model_state_dict'])
-    agent.epsilon = 0  # No exploration during play
-    
-    state = env.reset()
-    done = False
-    total_reward = 0
-    
-    while not done:
-        env.render()
-        pygame.event.pump()
-        
-        action = agent.act(state)
-        state, reward, done = env.step(action)
-        total_reward += reward
-        
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                done = True
-    
-    env.close()
-    print(f"Game Over! Score: {total_reward}")
-
-# Uncomment to play with the best model:
-play_flappy()
