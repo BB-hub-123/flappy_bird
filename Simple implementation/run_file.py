@@ -37,7 +37,11 @@ class ReplayBuffer:
 EPISODES = 10000
 BATCH_SIZE = 64
 BUFFER_CAPACITY = 10000
+<<<<<<< HEAD
+PRINT_INTERVAL = 100  # How often to print and plot
+=======
 PRINT_INTERVAL = 50  # How often to print and plot
+>>>>>>> 6b7c2abf4ef633ad9bf03d8de11dd91a5f7bd353
 
 # Initialize everything
 env = FlappyBird()      #opretter spillets miljø ved at hente 
