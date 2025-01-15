@@ -67,18 +67,23 @@ class FlappyBird:
         # Returnerer spillets aktuelle tilstand som en liste med relevante data.
         if not self.pipes:
             # Hvis der ikke er nogen rør, returneres en standardtilstand.
-            next_pipe = {'x': 288, 'top_y': 0, 'bottom_y': 512}
+            return np.array([
+                self.bird_y,
+                self.bird_velocity,
+                288,  # standard x distance
+                150,  # standard top_y
+                350   # standard bottom_y
+            ])
         else:
             # Finder det næste rør, som fuglen skal passere.
             next_pipe = next((p for p in self.pipes if p['x'] > 50), self.pipes[0])
-
-        return np.array([
-            self.bird_y,
-            self.bird_velocity,
-            next_pipe['x'] - 50,
-            next_pipe['top_y'],
-            next_pipe['bottom_y']
-        ])
+            return np.array([
+                self.bird_y,
+                self.bird_velocity,
+                next_pipe['x'] - 50,
+                next_pipe['top_y'],
+                next_pipe['bottom_y']
+            ])
 
     def step(self, action):
         # Base reward er mindre for bare at overleve
@@ -89,9 +94,12 @@ class FlappyBird:
             self.bird_velocity = -6  # Beholder den reducerede flap strength
         self.bird_y += self.bird_velocity
 
-        # Find afstand til nærmeste rør
-        next_pipe = next((p for p in self.pipes if p['x'] > 50), self.pipes[0])
-        pipe_center_y = (next_pipe['top_y'] + next_pipe['bottom_y']) / 2
+        # Find afstand til nærmeste rør - med check for tom pipe liste
+        if not self.pipes:
+            pipe_center_y = 256  # midten af skærmen
+        else:
+            next_pipe = next((p for p in self.pipes if p['x'] > 50), self.pipes[0])
+            pipe_center_y = (next_pipe['top_y'] + next_pipe['bottom_y']) / 2
         
         # Reward for at være tæt på center mellem rørene
         vertical_distance = abs(self.bird_y - pipe_center_y)
@@ -123,12 +131,7 @@ class FlappyBird:
             self.alive = False
             reward = -500
 
-        self.frame_count += 1
-        if self.frame_count % (100 // self.decision_frequency) == 0:
-            action = 1 if random.random() < 0.5 else 0
-            self.step(action)
-
         return self.get_state(), reward, not self.alive
+
     def close(self):
         pygame.quit()
-
