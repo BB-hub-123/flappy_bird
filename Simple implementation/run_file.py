@@ -37,11 +37,7 @@ class ReplayBuffer:
 EPISODES = 10000
 BATCH_SIZE = 64
 BUFFER_CAPACITY = 10000
-<<<<<<< HEAD
-PRINT_INTERVAL = 100  # How often to print and plot
-=======
 PRINT_INTERVAL = 50  # How often to print and plot
->>>>>>> 6b7c2abf4ef633ad9bf03d8de11dd91a5f7bd353
 
 # Initialize everything
 env = FlappyBird()      #opretter spillets miljø ved at hente 
@@ -56,65 +52,67 @@ best_score = float('-inf')  # Keep track of the best score
 
 # Training loop
 try:
-    for episode in range(EPISODES):
-        state = env.reset()
-        episode_reward = 0
-        episode_loss = 0
-        gradient_steps = 0
-        done = False
-        steps = 0
+    for episode in range(EPISODES): # kører igennem det antal givne episoder
+        state = env.reset()         # nulstiller miljø og returnerer til starttilstanden
+        episode_reward = 0          # samler rewards for den enkelte spil-episode
+        episode_loss = 0            # samler loss for den enkelte spilepisode
+        gradient_steps = 0          # antal gradientopdateringer i denne periode
+        #hvorfor er denne nul?
+        done = False                # indikation om episode er færdig eller ej
+        steps = 0                   # tæller antal skridt i episoden
         
-        while not done:
+        while not done: #loop der kører indil episoden er færdig/afsluttes
             # Get action from agent
             action = agent.act(state)
             
-            # Take action in environment
+            # Take action in environment 
             next_state, reward, done = env.step(action)
             
-            # Store transition in replay buffer
+            # Store transition in replay buffer (hvad for en transition? den der lige er spillet?)
             replay_buffer.push(state, action, reward, next_state, done)
             
-            # Train if enough samples
+            # Train if enough samples in replay buffer
             if len(replay_buffer) >= BATCH_SIZE:
                 states, actions, rewards, next_states, dones = replay_buffer.sample(BATCH_SIZE)
                 loss = agent.train_on_batch(states, actions, rewards, next_states, dones)
-                episode_loss += loss
-                gradient_steps += 1
+                episode_loss += loss #samler tab fra træningen
+                gradient_steps += 1 #øger tælleren for gradienopdateringer - hvad betyder det i praksis? 
             
             # Update state and metrics
             state = next_state
-            episode_reward += reward
-            steps += 1
+            episode_reward += reward  # Tilføj den modtagne belønning til episodens samlede belønning
+            steps += 1  # Øger tælleren for skridt i episoden
             
-            # Render every nth episode
+            # Render (=gengive) every n'th episode
+            #for at se progression
             if episode % 50 == 0:
-                env.render()
-                pygame.event.pump()
+                env.render()    # viser det seneste spil af de 50. (dvs. der spilles 49 skjulte spil og det sidste vises så)
+                pygame.event.pump()  #gør således, at man som bruger kan lukke spillet, uden at det "fryser fast"
             
             # Handle pygame events
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
-                    raise KeyboardInterrupt
+                    raise KeyboardInterrupt   # Stopper træningen, hvis brugeren afslutter
         
         # Update target network periodically
         if episode % agent.target_update == 0:
             agent.update_target_network()
         
         # Store episode metrics
-        scores.append(episode_reward)
-        steps_per_episode.append(steps)
-        losses.append(episode_loss / (gradient_steps + 1) if gradient_steps > 0 else 0)
+        scores.append(episode_reward)   #gemmer totale belønning for episoden
+        steps_per_episode.append(steps)   #gemmer antal skridt i episoden
+        losses.append(episode_loss / (gradient_steps + 1) if gradient_steps > 0 else 0)  #gennemsnitstab for episoden
         
         # Save best model
         if episode_reward > best_score:
             best_score = episode_reward
             torch.save({
-                'episode': episode,
-                'model_state_dict': agent.policy_net.state_dict(),
-                'optimizer_state_dict': agent.optimizer.state_dict(),
-                'score': best_score,
-                'epsilon': agent.epsilon
-            }, 'flappy_best_model.pth')
+                'episode': episode,  # Den aktuelle episode
+                'model_state_dict': agent.policy_net.state_dict(),  # Policy-netværkets vægte
+                'optimizer_state_dict': agent.optimizer.state_dict(),  # Optimererens tilstand
+                'score': best_score,  # Den bedste score hidtil
+                'epsilon': agent.epsilon  # Den aktuelle epsilonværdi (udforskningsrate)
+            }, 'flappy_best_model.pth')  # Gemmer modellen i en fil
         
         # Print and plot progress every PRINT_INTERVAL episodes
         if (episode + 1) % PRINT_INTERVAL == 0:
@@ -123,20 +121,22 @@ try:
             avg_steps = np.mean(steps_per_episode[-PRINT_INTERVAL:]) if len(steps_per_episode) >= PRINT_INTERVAL else np.mean(steps_per_episode)
             print(f"Episode: {episode+1}, Avg Score: {avg_score:.2f}, Avg Steps: {avg_steps:.1f}, Epsilon: {agent.epsilon:.3f}")
             
-            # Plot metrics
+            # Plot metrics (opdaterer grafer for resultater)
             plt.figure(1)
             plt.clf()  # Clear the previous plot
-            plt.subplot(311)
+            plt.subplot(311)   #plot for scoren
             plt.plot(scores, '.')
             plt.title(f'Training Progress (ε={agent.epsilon:.3f})')
             plt.ylabel('Score')
             plt.grid(True)
             
-            plt.subplot(312)
+            #plot for antal skridt pr. episode
+            plt.subplot(312)  
             plt.plot(steps_per_episode, '.')
             plt.ylabel('Steps')
             plt.grid(True)
             
+            # Plot for tabet (loss)
             plt.subplot(313)
             plt.plot(losses, '.')
             plt.xlabel('Episode')
@@ -147,6 +147,8 @@ try:
 
 except KeyboardInterrupt:
     print("\nTraining interrupted by user")
+
+#lukker miljøet:
 finally:
     env.close()  # Close the environment and quit pygame
     pygame.quit()
