@@ -69,25 +69,16 @@ try:
             
             # Update state and metrics
             state = next_state
-            episode_reward += reward
+            episode_reward += reward  # Samler belønningen
             steps += 1
-            
-            # Render every nth episode
+
+            # Render the game every nth episode
             if episode % 50 == 0:
                 env.render()
                 pygame.event.pump()
-            
-            # Handle pygame events
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    raise KeyboardInterrupt
-        
-        # Update target network periodically
-        if episode % agent.target_update == 0:
-            agent.update_target_network()
-        
-        # Store episode metrics
-        scores.append(episode_reward)
+
+        # Gem den faktiske score (antal passerede rør) for plot
+        scores.append(env.score)  # Kun antallet af passerede rør
         steps_per_episode.append(steps)
         losses.append(episode_loss / (gradient_steps + 1) if gradient_steps > 0 else 0)
         
