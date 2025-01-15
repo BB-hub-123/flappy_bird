@@ -44,15 +44,17 @@ best_score = float('-inf')  # Keep track of the best score
 try:
     for episode in range(EPISODES):
         state = env.reset()
-        env.score = 0  # Nulstil den faktiske score (antal passerede rør)
-        episode_reward = 0  # Den samlede belønning til træningen
+        episode_reward = 0
         episode_loss = 0
         gradient_steps = 0
         done = False
         steps = 0
         
         while not done:
+            # Get action from agent
             action = agent.act(state)
+            
+            # Take action in environment
             next_state, reward, done = env.step(action)
             
             # Store transition in replay buffer (hvad for en transition? den der lige er spillet?)
