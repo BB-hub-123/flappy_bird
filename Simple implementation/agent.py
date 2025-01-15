@@ -15,6 +15,8 @@ class DQN(nn.Module):
             nn.ReLU(),
             nn.Linear(hidden_size, hidden_size),
             nn.ReLU(),
+            nn.Linear(hidden_size, hidden_size),
+            nn.ReLU(),
             nn.Linear(hidden_size, output_size)
         )
     
@@ -24,7 +26,7 @@ class DQN(nn.Module):
 
 # DQNAgent
 class DQNAgent:
-    def __init__(self, state_size=5, action_size=2, hidden_size=64, learning_rate=0.0001):
+    def __init__(self, state_size=5, action_size=2, hidden_size=128, learning_rate=0.0001):
         self.state_size = state_size
         self.action_size = action_size
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")

@@ -31,7 +31,7 @@ PRINT_INTERVAL = 50  # How often to print and plot
 
 # Initialize everything
 env = FlappyBird()      #opretter spillets miljø ved at hente 
-agent = DQNAgent(state_size=5, action_size=2, hidden_size=64)  # Fixed state_size to 5
+agent = DQNAgent(state_size=5, action_size=2, hidden_size=128)  # Fixed state_size to 5
 replay_buffer = ReplayBuffer(BUFFER_CAPACITY)
 
 # Lists for tracking metrics
