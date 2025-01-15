@@ -24,7 +24,7 @@ class ReplayBuffer:
         return len(self.buffer)
 
 # Training settings
-EPISODES = 1400
+EPISODES = 10000
 BATCH_SIZE = 32
 BUFFER_CAPACITY = 10000
 PRINT_INTERVAL = 100  # How often to print and plot

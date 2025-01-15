@@ -67,32 +67,51 @@ class FlappyBird:
         # Returnerer spillets aktuelle tilstand som en liste med relevante data.
         if not self.pipes:
             # Hvis der ikke er nogen rør, returneres en standardtilstand.
-            next_pipe = {'x': 288, 'top_y': 0, 'bottom_y': 512}
+            return np.array([
+                self.bird_y,
+                self.bird_velocity,
+                288,  # standard x distance
+                150,  # standard top_y
+                350   # standard bottom_y
+            ])
         else:
             # Finder det næste rør, som fuglen skal passere.
             next_pipe = next((p for p in self.pipes if p['x'] > 50), self.pipes[0])
-
-        return np.array([
-            self.bird_y,
-            self.bird_velocity,
-            next_pipe['x'] - 50,
-            next_pipe['top_y'],
-            next_pipe['bottom_y']
-        ])
+            return np.array([
+                self.bird_y,
+                self.bird_velocity,
+                next_pipe['x'] - 50,
+                next_pipe['top_y'],
+                next_pipe['bottom_y']
+            ])
 
     def step(self, action):
-        reward = 0.1
+        # Base reward er mindre for bare at overleve
+        reward = 0.01
+        
         self.bird_velocity += 0.5  # gravity
         if action == 1:
-            self.bird_velocity = -8  # flap strength
+            self.bird_velocity = -6  # Beholder den reducerede flap strength
         self.bird_y += self.bird_velocity
 
+        # Find afstand til nærmeste rør - med check for tom pipe liste
+        if not self.pipes:
+            pipe_center_y = 256  # midten af skærmen
+        else:
+            next_pipe = next((p for p in self.pipes if p['x'] > 50), self.pipes[0])
+            pipe_center_y = (next_pipe['top_y'] + next_pipe['bottom_y']) / 2
+        
+        # Reward for at være tæt på center mellem rørene
+        vertical_distance = abs(self.bird_y - pipe_center_y)
+        reward -= vertical_distance / 100  # Jo længere fra center, jo mere negativ reward
+        
+        # Eksisterende kode for rør og scoring
         for pipe in self.pipes:
-            pipe['x'] -= 3  # pipe speed
+            pipe['x'] -= 3
             if pipe['x'] < 50 and not pipe['scored']:
                 pipe['scored'] = True
-                self.score += 1  # Update score only when passing pipe
-                
+                self.score += 1
+                reward += 25  # Meget større reward for at passere rør
 
         self.pipes = [p for p in self.pipes if p['x'] > -40]
 
@@ -100,24 +119,19 @@ class FlappyBird:
             self._add_pipe()
             self.pipe_spawn_time = pygame.time.get_ticks()
 
+        # Check for kollision med rør
         for pipe in self.pipes:
             if (pipe['x'] < 65 and pipe['x'] > 15 and
                 (self.bird_y < pipe['top_y'] or self.bird_y > pipe['bottom_y'])):
                 self.alive = False
+                reward = -50
 
+        # Ekstrem straf for at flyve ud af banen
         if self.bird_y > 450 or self.bird_y < 0:
             self.alive = False
-
-        if not self.alive:
-            reward = -100.0
-
-        self.frame_count += 1  # Øg frame tælleren
-        if self.frame_count % (100 // self.decision_frequency) == 0:  # Beslutninger hver 30. frame
-            action = 1 if random.random() < 0.5 else 0  # Random beslutning for demonstration
-            self.step(action)
+            reward = -500
 
         return self.get_state(), reward, not self.alive
 
     def close(self):
         pygame.quit()
-

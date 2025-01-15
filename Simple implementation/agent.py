@@ -40,7 +40,7 @@ class DQNAgent:
         self.epsilon = 1.0
         self.epsilon_min = 0.01
         self.epsilon_decay = 0.9999
-        self.target_update = 10
+        self.target_update = 15
         self.learning_rate = learning_rate
         
         self.optimizer = optim.Adam(self.policy_net.parameters(), lr=self.learning_rate)
