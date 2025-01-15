@@ -44,39 +44,50 @@ best_score = float('-inf')  # Keep track of the best score
 try:
     for episode in range(EPISODES):
         state = env.reset()
-        env.score = 0  # Nulstil den faktiske score (antal passerede rør)
-        episode_reward = 0  # Den samlede belønning til træningen
+        episode_reward = 0
         episode_loss = 0
         gradient_steps = 0
         done = False
         steps = 0
         
         while not done:
+            # Get action from agent
             action = agent.act(state)
+            
+            # Take action in environment
             next_state, reward, done = env.step(action)
             
-            # Store transition in replay buffer
+            # Store transition in replay buffer (hvad for en transition? den der lige er spillet?)
             replay_buffer.push(state, action, reward, next_state, done)
             
-            # Train if enough samples
+            # Train if enough samples in replay buffer
             if len(replay_buffer) >= BATCH_SIZE:
                 states, actions, rewards, next_states, dones = replay_buffer.sample(BATCH_SIZE)
                 loss = agent.train_on_batch(states, actions, rewards, next_states, dones)
-                episode_loss += loss
-                gradient_steps += 1
+                episode_loss += loss #samler tab fra træningen
+                gradient_steps += 1 #øger tælleren for gradienopdateringer - hvad betyder det i praksis? 
             
             # Update state and metrics
             state = next_state
-            episode_reward += reward  # Samler belønningen
+            episode_reward += reward
             steps += 1
-
-            # Render the game every nth episode
+            
+            # Render every nth episode
             if episode % 50 == 0:
                 env.render()
                 pygame.event.pump()
-
-        # Gem den faktiske score (antal passerede rør) for plot
-        scores.append(env.score)  # Kun antallet af passerede rør
+            
+            # Handle pygame events
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    raise KeyboardInterrupt
+        
+        # Update target network periodically
+        if episode % agent.target_update == 0:
+            agent.update_target_network()
+        
+        # Store episode metrics
+        scores.append(episode_reward)
         steps_per_episode.append(steps)
         losses.append(episode_loss / (gradient_steps + 1) if gradient_steps > 0 else 0)
         
@@ -84,12 +95,12 @@ try:
         if episode_reward > best_score:
             best_score = episode_reward
             torch.save({
-                'episode': episode,
-                'model_state_dict': agent.policy_net.state_dict(),
-                'optimizer_state_dict': agent.optimizer.state_dict(),
-                'score': best_score,
-                'epsilon': agent.epsilon
-            }, 'flappy_best_model.pth')
+                'episode': episode,  # Den aktuelle episode
+                'model_state_dict': agent.policy_net.state_dict(),  # Policy-netværkets vægte
+                'optimizer_state_dict': agent.optimizer.state_dict(),  # Optimererens tilstand
+                'score': best_score,  # Den bedste score hidtil
+                'epsilon': agent.epsilon  # Den aktuelle epsilonværdi (udforskningsrate)
+            }, 'flappy_best_model.pth')  # Gemmer modellen i en fil
         
         # Print and plot progress every PRINT_INTERVAL episodes
         if (episode + 1) % PRINT_INTERVAL == 0:
@@ -97,20 +108,22 @@ try:
             avg_steps = np.mean(steps_per_episode[-PRINT_INTERVAL:])
             print(f"Episode: {episode+1}, Avg Score (Passered Rør): {avg_score:.2f}, Avg Steps: {avg_steps:.1f}, Epsilon: {agent.epsilon:.3f}")
             
-            # Plot metrics
+            # Plot metrics (opdaterer grafer for resultater)
             plt.figure(1)
             plt.clf()  # Clear the previous plot
-            plt.subplot(311)
+            plt.subplot(311)   #plot for scoren
             plt.plot(scores, '.')
             plt.title(f'Training Progress (ε={agent.epsilon:.3f})')
             plt.ylabel('Passered Rør')  # Y-aksen viser antallet af passerede rør
             plt.grid(True)
             
-            plt.subplot(312)
+            #plot for antal skridt pr. episode
+            plt.subplot(312)  
             plt.plot(steps_per_episode, '.')
             plt.ylabel('Steps')
             plt.grid(True)
             
+            # Plot for tabet (loss)
             plt.subplot(313)
             plt.plot(losses, '.')
             plt.xlabel('Episode')
@@ -121,6 +134,8 @@ try:
 
 except KeyboardInterrupt:
     print("\nTraining interrupted by user")
+
+#lukker miljøet:
 finally:
     env.close()  # Close the environment and quit pygame
     pygame.quit()
