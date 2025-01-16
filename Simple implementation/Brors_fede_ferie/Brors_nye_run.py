@@ -77,25 +77,25 @@ def train_flappy():
             losses.append(episode_loss / (gradient_steps + 1) if gradient_steps > 0 else 0)
             
             # Save model based on consistent performance
-        if (episode + 1) % PRINT_INTERVAL == 0 and len(scores) >= SAVE_WINDOW:
-            current_avg_score = np.mean(scores[-SAVE_WINDOW:])
-            
-            if current_avg_score > best_avg_score:
-                best_avg_score = current_avg_score
-                # Find the best single episode score within this window
-                best_episode_score = max(scores[-SAVE_WINDOW:])
-                torch.save({
-                    'episode': episode,
-                    'model_state_dict': agent.policy_net.state_dict(),
-                    'target_state_dict': agent.target_net.state_dict(),
-                    'optimizer_state_dict': agent.optimizer.state_dict(),
-                    'score': best_episode_score,  # Save the best individual score
-                    'avg_score': current_avg_score,  # Also save the average for reference
-                    'window_size': SAVE_WINDOW,
-                    'epsilon': agent.epsilon
-                }, 'flappy_best_model.pth')
-                print(f"\nNew best model saved! Average score over {SAVE_WINDOW} episodes: {current_avg_score:.2f}")
-                print(f"Best single episode score in this window: {best_episode_score}")
+            if (episode + 1) % PRINT_INTERVAL == 0 and len(scores) >= SAVE_WINDOW:
+                current_avg_score = np.mean(scores[-SAVE_WINDOW:])
+                
+                if current_avg_score > best_avg_score:
+                    best_avg_score = current_avg_score
+                    # Find the best single episode score within this window
+                    best_episode_score = max(scores[-SAVE_WINDOW:])
+                    torch.save({
+                        'episode': episode,
+                        'model_state_dict': agent.policy_net.state_dict(),
+                        'target_state_dict': agent.target_net.state_dict(),
+                        'optimizer_state_dict': agent.optimizer.state_dict(),
+                        'score': best_episode_score,  # Save the best individual score
+                        'avg_score': current_avg_score,  # Also save the average for reference
+                        'window_size': SAVE_WINDOW,
+                        'epsilon': agent.epsilon
+                    }, 'flappy_best_model.pth')
+                    print(f"\nNew best model saved! Average score over {SAVE_WINDOW} episodes: {current_avg_score:.2f}")
+                    print(f"Best single episode score in this window: {best_episode_score}")
             
             # Print and plot progress
             if (episode + 1) % PRINT_INTERVAL == 0:
