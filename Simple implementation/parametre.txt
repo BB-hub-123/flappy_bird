@@ -26,3 +26,12 @@ PRINT_INTERVAL = 50
 
 FRA simpel_spil.py:
 hop-højden = 6 (kaldes velocity og der står -=6)
+
+
+
+som udgangspunkt fastlåser vi, at vi skal have;
+- 3 skjulte lag
+- 128 neuroner i hvert lag
+
+
+at teste i morgen - batchstørrelse på 128 
