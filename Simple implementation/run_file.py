@@ -24,14 +24,14 @@ class ReplayBuffer:
         return len(self.buffer)
 
 # Training settings
-EPISODES = 10000
-BATCH_SIZE = 64
-BUFFER_CAPACITY = 10000
+EPISODES = 50000
+BATCH_SIZE = 128
+BUFFER_CAPACITY = 100000
 PRINT_INTERVAL = 50  # How often to print and plot
 
 # Initialize everything
 env = FlappyBird()      #opretter spillets miljø ved at hente 
-agent = DQNAgent(state_size=5, action_size=2, hidden_size=128)  # Fixed state_size to 5
+agent = DQNAgent(state_size=5, action_size=2, hidden_size=256)  # Fixed state_size to 5
 replay_buffer = ReplayBuffer(BUFFER_CAPACITY)
 
 # Lists for tracking metrics
