@@ -8,50 +8,43 @@ import random
 class DQN(nn.Module):
     def __init__(self, input_size, hidden_size, output_size):
         super(DQN, self).__init__()
-        # Network layers - we use a deep architecture with three hidden layers
-        # This gives us enough capacity to learn complex game strategies
+        # First layer with normalization
         self.fc1 = nn.Linear(input_size, hidden_size)
+        self.bn1 = nn.BatchNorm1d(hidden_size)
+        
+        # Second layer with normalization
         self.fc2 = nn.Linear(hidden_size, hidden_size)
-        self.fc3 = nn.Linear(hidden_size, hidden_size)
-        self.fc4 = nn.Linear(hidden_size, output_size)
+        self.bn2 = nn.BatchNorm1d(hidden_size)
         
-        # Layer normalization for each hidden layer
-        # Unlike BatchNorm, LayerNorm normalizes across features, not batch
-        # This makes it perfect for both single samples and batches
-        self.ln1 = nn.LayerNorm(hidden_size)
-        self.ln2 = nn.LayerNorm(hidden_size)
-        self.ln3 = nn.LayerNorm(hidden_size)
+        # Output layer (no normalization needed)
+        self.fc3 = nn.Linear(hidden_size, output_size)
         
-        # Initialize weights using He initialization
-        # This helps prevent vanishing/exploding gradients with ReLU
+        # Kaiming initialization for better gradient flow
         nn.init.kaiming_normal_(self.fc1.weight)
         nn.init.kaiming_normal_(self.fc2.weight)
         nn.init.kaiming_normal_(self.fc3.weight)
-        nn.init.kaiming_normal_(self.fc4.weight)
         
-        # Small positive bias to help with ReLU dead neuron problem
+        # Small positive bias initialization
         nn.init.constant_(self.fc1.bias, 0.1)
         nn.init.constant_(self.fc2.bias, 0.1)
         nn.init.constant_(self.fc3.bias, 0.1)
-        nn.init.constant_(self.fc4.bias, 0.1)
-        
-        # Dropout for regularization
-        # 0.2 means we keep 80% of neurons active
-        self.dropout = nn.Dropout(0.2)
     
     def forward(self, x):
-        # Simplified forward pass while maintaining key improvements
-        x = F.relu(self.ln1(self.fc1(x)))
-        x = F.relu(self.ln2(self.fc2(x)))
-        x = F.relu(self.ln3(self.fc3(x)))
+        # Handle single-sample case for action selection
+        if x.dim() == 1:
+            x = x.unsqueeze(0)
+            
+        # First layer with batch norm and ReLU
+        x = self.bn1(F.relu(self.fc1(x)))
         
-        # Output layer (no normalization or activation)
-        x = self.fc4(x)
-        return x
-
+        # Second layer with batch norm and ReLU
+        x = self.bn2(F.relu(self.fc2(x)))
+        
+        # Output layer (no activation needed)
+        return self.fc3(x)
 
 class DQNAgent:
-    def __init__(self, state_size=5, action_size=2, hidden_size=128, learning_rate=0.0003):
+    def __init__(self, state_size=5, action_size=2, hidden_size=128):
         self.state_size = state_size
         self.action_size = action_size
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -61,102 +54,75 @@ class DQNAgent:
         self.target_net = DQN(state_size, hidden_size, action_size).to(self.device)
         self.target_net.load_state_dict(self.policy_net.state_dict())
         
-        # Training parameters
-        self.batch_size = 64
-        self.gamma = 0.99  # Discount factor for future rewards
-        self.epsilon = 1.0  # Start with full exploration
-        self.epsilon_min = 0.01  # Minimum exploration rate
-        self.epsilon_decay = 0.9995  # Slow decay for better exploration
-        self.target_update = 10  # Update target network every N steps
-        self.learning_rate = learning_rate
+        # Optimized training parameters
+        self.batch_size = 128  # Larger batch size for faster training
+        self.gamma = 0.99
+        self.epsilon = 1.0
+        self.epsilon_min = 0.01
+        self.epsilon_decay = 0.997  # Faster decay
+        self.learning_rate = 0.001  # Slightly higher learning rate
+        self.target_update = 5  # More frequent target updates
         
-        # Initialize optimizer with Adam
-        self.optimizer = optim.Adam(self.policy_net.parameters(), lr=self.learning_rate)
-        
-        # Learning rate scheduler for adaptive learning
-        self.scheduler = optim.lr_scheduler.ReduceLROnPlateau(
-            self.optimizer,
-            mode='max',
-            factor=0.5,
-            patience=1000,
-            verbose=True,
-            min_lr=0.00001
+        # Adam optimizer with momentum
+        self.optimizer = optim.Adam(
+            self.policy_net.parameters(),
+            lr=self.learning_rate,
+            betas=(0.9, 0.999)  # Default Adam momentum parameters
         )
-        
-        # Huber loss (smooth L1) for better stability with outliers
-        self.criterion = nn.SmoothL1Loss()
         
         # Training step counter
         self.training_steps = 0
-    
+        
     def act(self, state, training=True):
-        # Epsilon-greedy action selection
         if training and random.random() < self.epsilon:
             return random.randrange(self.action_size)
         
         with torch.no_grad():
-            # Convert state to tensor and ensure proper shape
-            if isinstance(state, np.ndarray):
-                state = torch.FloatTensor(state)
-            if len(state.shape) == 1:
-                state = state.unsqueeze(0)
-            state = state.to(self.device)
-            
-            # Get Q-values and select best action
-            self.policy_net.eval()  # Set to evaluation mode
+            state = torch.FloatTensor(state).to(self.device)
+            self.policy_net.eval()  # Set to evaluation mode for batch norm
             q_values = self.policy_net(state)
             self.policy_net.train()  # Set back to training mode
             return q_values.argmax().item()
     
     def train_on_batch(self, states, actions, rewards, next_states, dones):
-        # Convert all inputs to appropriate tensor types
+        # Convert to tensors and ensure proper shape
         states = torch.FloatTensor(states).to(self.device)
         next_states = torch.FloatTensor(next_states).to(self.device)
         rewards = torch.FloatTensor(rewards).to(self.device)
         actions = torch.LongTensor(actions).to(self.device)
         dones = torch.FloatTensor(dones).to(self.device)
         
-        # Compute current Q values
+        # Get current Q values
         current_q_values = self.policy_net(states).gather(1, actions.unsqueeze(1))
         
-        # Compute next Q values with Double DQN
+        # Compute target Q values efficiently
         with torch.no_grad():
-            # Get actions from policy network
-            next_actions = self.policy_net(next_states).max(1)[1].unsqueeze(1)
-            # Get Q-values from target network for those actions
-            next_q_values = self.target_net(next_states).gather(1, next_actions)
-            # Compute target Q values
+            next_q_values = self.target_net(next_states).max(1)[0].unsqueeze(1)
             target_q_values = rewards.unsqueeze(1) + (1 - dones.unsqueeze(1)) * self.gamma * next_q_values
         
-        # Compute loss and update
-        loss = self.criterion(current_q_values, target_q_values)
+        # Compute Huber loss
+        loss = F.smooth_l1_loss(current_q_values, target_q_values)
+        
+        # Optimize the model
         self.optimizer.zero_grad()
         loss.backward()
-        
-        # Gradient clipping to prevent exploding gradients
-        torch.nn.utils.clip_grad_norm_(self.policy_net.parameters(), max_norm=1.0)
-        
+        # Note: removed gradient clipping for speed as batch norm helps with gradient stability
         self.optimizer.step()
         
-        # Update epsilon with decay
+        # Update epsilon
         self.epsilon = max(self.epsilon_min, self.epsilon * self.epsilon_decay)
         
         self.training_steps += 1
-        
         return loss.item()
     
     def update_target_network(self):
-        # Soft update of target network
-        tau = 0.001  # Soft update parameter
-        for target_param, policy_param in zip(self.target_net.parameters(), self.policy_net.parameters()):
-            target_param.data.copy_(tau * policy_param.data + (1.0 - tau) * target_param.data)
+        self.target_net.load_state_dict(self.policy_net.state_dict())
     
     def save_model(self, filepath, metrics=None):
         torch.save({
             'policy_state_dict': self.policy_net.state_dict(),
             'target_state_dict': self.target_net.state_dict(),
             'optimizer_state_dict': self.optimizer.state_dict(),
-            'scheduler_state_dict': self.scheduler.state_dict(),
             'epsilon': self.epsilon,
             'training_steps': self.training_steps,
             'metrics': metrics
@@ -167,7 +133,6 @@ class DQNAgent:
         self.policy_net.load_state_dict(checkpoint['policy_state_dict'])
         self.target_net.load_state_dict(checkpoint['target_state_dict'])
         self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
-        self.scheduler.load_state_dict(checkpoint['scheduler_state_dict'])
         self.epsilon = checkpoint['epsilon']
         self.training_steps = checkpoint['training_steps']
         return checkpoint.get('metrics', None)

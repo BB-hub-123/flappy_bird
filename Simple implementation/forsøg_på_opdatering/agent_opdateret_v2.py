@@ -8,23 +8,25 @@ import random
 class DQN(nn.Module):
     def __init__(self, input_size, hidden_size, output_size):
         super(DQN, self).__init__()
-        # Simplified architecture with one hidden layer for faster computation
+        # Two hidden layers but still efficient
         self.fc1 = nn.Linear(input_size, hidden_size)
-        self.fc2 = nn.Linear(hidden_size, output_size)
+        self.fc2 = nn.Linear(hidden_size, hidden_size // 2)
+        self.fc3 = nn.Linear(hidden_size // 2, output_size)
         
-        # Use faster ReLU implementation
-        self.activation = nn.ReLU(inplace=True)
+        # Leaky ReLU for better gradient flow
+        self.activation = nn.LeakyReLU(0.1, inplace=True)
         
-        # Initialize weights with simpler uniform distribution
-        self.fc1.weight.data.uniform_(-0.1, 0.1)
-        self.fc2.weight.data.uniform_(-0.1, 0.1)
+        # Xavier initialization for better initial learning
+        nn.init.xavier_uniform_(self.fc1.weight)
+        nn.init.xavier_uniform_(self.fc2.weight)
+        nn.init.xavier_uniform_(self.fc3.weight)
 
     def forward(self, x):
-        # Simplified forward pass without batch normalization
         if x.dim() == 1:
             x = x.unsqueeze(0)
         x = self.activation(self.fc1(x))
-        return self.fc2(x)
+        x = self.activation(self.fc2(x))
+        return self.fc3(x)
 
 class DQNAgent:
     def __init__(self, state_size=5, action_size=2, hidden_size=64):
@@ -37,13 +39,13 @@ class DQNAgent:
         self.target_net = DQN(state_size, hidden_size, action_size).to(self.device)
         self.target_net.load_state_dict(self.policy_net.state_dict())
         
-        # Optimized hyperparameters
-        self.batch_size = 64  # Smaller batch size for faster training
-        self.gamma = 0.99
+        # Retuned hyperparameters for better learning
+        self.batch_size = 128  # Increased for better stability
+        self.gamma = 0.95  # Reduced to focus more on immediate rewards
         self.epsilon = 1.0
-        self.epsilon_min = 0.01
-        self.epsilon_decay = 0.9995
-        self.learning_rate = 0.001
+        self.epsilon_min = 0.05  # Increased minimum exploration
+        self.epsilon_decay = 0.9997  # Slower decay for better exploration
+        self.learning_rate = 0.0005  # Reduced to prevent overshooting
         
         # Use SGD with momentum instead of Adam for faster updates
         self.optimizer = optim.SGD(
