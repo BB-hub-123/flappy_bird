@@ -7,15 +7,16 @@ import os
 import glob
 import matplotlib.pyplot as plt
 from datetime import datetime
+import time
 
 def train_flappy(env_class, agent_class):
     """
-    Optimized training loop with improved file management and performance
+    Optimized training loop with improved file management and performance tracking
     """
     # Core training settings
     EPISODES = 40000
-    BATCH_SIZE = 64
-    BUFFER_CAPACITY = 10000  # Smaller buffer for better memory usage
+    BATCH_SIZE = 128  # Matched with agent's batch size
+    BUFFER_CAPACITY = 10000
     WINDOW_SIZE = 100
     
     # Create save directory
@@ -29,12 +30,13 @@ def train_flappy(env_class, agent_class):
     
     # Tracking variables
     window_scores = deque(maxlen=WINDOW_SIZE)
-    all_scores = []  # Keep track of all scores for visualization
-    moving_averages = []  # Keep track of moving averages
+    all_scores = []
+    moving_averages = []
     best_avg_score = float('-inf')
+    start_time = time.time()
     
     # Set up the plot
-    plt.ion()  # Enable interactive mode
+    plt.ion()
     fig, ax = plt.subplots(figsize=(10, 6))
     plt.title('Flappy Bird DQN Training Progress')
     plt.xlabel('Episode')
@@ -43,6 +45,7 @@ def train_flappy(env_class, agent_class):
     
     try:
         for episode in range(EPISODES):
+            episode_start = time.time()
             state = env.reset()
             episode_reward = 0
             done = False
@@ -56,8 +59,7 @@ def train_flappy(env_class, agent_class):
                 replay_buffer.append((state, action, reward, next_state, done))
                 
                 if len(replay_buffer) >= BATCH_SIZE:
-                    # Sample and train less frequently
-                    if len(replay_buffer) % 4 == 0:
+                    if len(replay_buffer) % 4 == 0:  # Train every 4 steps
                         batch = random.sample(replay_buffer, BATCH_SIZE)
                         states, actions, rewards, next_states, dones = zip(*batch)
                         agent.train_on_batch(np.array(states), 
@@ -72,12 +74,17 @@ def train_flappy(env_class, agent_class):
             window_scores.append(env.score)
             all_scores.append(env.score)
             
-            # Only update when we have enough episodes for meaningful average
+            # Performance metrics
+            elapsed_time = time.time() - start_time
+            episodes_per_minute = (episode + 1) / (elapsed_time / 60)
+            estimated_total_time = (EPISODES * elapsed_time) / (episode + 1)
+            time_remaining = estimated_total_time - elapsed_time
+            
             if len(window_scores) == WINDOW_SIZE:
                 current_avg = sum(window_scores) / WINDOW_SIZE
                 moving_averages.append(current_avg)
                 
-                # Update visualization every 50 episodes to maintain performance
+                # Update visualization every 50 episodes
                 if episode % 50 == 0:
                     ax.clear()
                     ax.plot(all_scores[-1000:], 'b.', alpha=0.2, label='Scores')
@@ -87,10 +94,9 @@ def train_flappy(env_class, agent_class):
                     ax.set_ylabel('Score')
                     ax.set_xlabel('Episode')
                     ax.legend()
-                    plt.pause(0.01)  # Short pause to update display
-                current_avg = sum(window_scores) / WINDOW_SIZE
+                    plt.pause(0.01)
                 
-                # Save only if we have a new best model
+                # Save if we have a new best model
                 if current_avg > best_avg_score:
                     best_avg_score = current_avg
                     
@@ -102,9 +108,14 @@ def train_flappy(env_class, agent_class):
                     model_path = os.path.join(save_dir, f"best_model.pth")
                     agent.save_model(model_path)
                     
-                    print(f"\nEpisode {episode + 1}")
+                    print("\n" + "="*50)
+                    print(f"Episode {episode + 1}")
                     print(f"New best {WINDOW_SIZE}-episode average: {current_avg:.2f}")
+                    print(f"Training Speed: {episodes_per_minute:.1f} episodes/minute")
+                    print(f"Time Elapsed: {elapsed_time/60:.1f} minutes")
+                    print(f"Estimated Time Remaining: {time_remaining/60:.1f} minutes")
                     print(f"Epsilon: {agent.epsilon:.3f}")
+                    print("="*50)
             
             # Update target network periodically
             if episode % 100 == 0:
