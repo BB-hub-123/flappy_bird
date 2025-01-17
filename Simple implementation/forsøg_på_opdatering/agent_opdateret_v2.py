@@ -9,9 +9,9 @@ class DQN(nn.Module):
     def __init__(self, input_size, hidden_size, output_size):
         super(DQN, self).__init__()
         # Two hidden layers but still efficient
-        self.fc1 = nn.Linear(input_size, hidden_size)
-        self.fc2 = nn.Linear(hidden_size, hidden_size // 2)
-        self.fc3 = nn.Linear(hidden_size // 2, output_size)
+        self.fc1 = nn.Linear(input_size, hidden_size // 2)
+        self.fc2 = nn.Linear(hidden_size // 2, hidden_size // 4)
+        self.fc3 = nn.Linear(hidden_size // 4, output_size)
         
         # Leaky ReLU for better gradient flow
         self.activation = nn.LeakyReLU(0.1, inplace=True)
@@ -29,7 +29,7 @@ class DQN(nn.Module):
         return self.fc3(x)
 
 class DQNAgent:
-    def __init__(self, state_size=5, action_size=2, hidden_size=64):
+    def __init__(self, state_size=5, action_size=2, hidden_size=128):
         self.state_size = state_size
         self.action_size = action_size
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -40,12 +40,12 @@ class DQNAgent:
         self.target_net.load_state_dict(self.policy_net.state_dict())
         
         # Retuned hyperparameters for better learning
-        self.batch_size = 128  # Increased for better stability
-        self.gamma = 0.95  # Reduced to focus more on immediate rewards
+        self.batch_size = 256  # Increased for better stability
+        self.gamma = 0.99  # Reduced to focus more on immediate rewards
         self.epsilon = 1.0
         self.epsilon_min = 0.05  # Increased minimum exploration
-        self.epsilon_decay = 0.9997  # Slower decay for better exploration
-        self.learning_rate = 0.0005  # Reduced to prevent overshooting
+        self.epsilon_decay = 0.998 # Slower decay for better exploration
+        self.learning_rate = 0.003  # Reduced to prevent overshooting
         
         # Use SGD with momentum instead of Adam for faster updates
         self.optimizer = optim.SGD(

@@ -6,8 +6,15 @@ class FlappyBird:
     def __init__(self):
         # Initialize Pygame and game state
         pygame.init()
-        self.reset()
         
+        # Dimensions and constraints
+        self.SCREEN_WIDTH = 288
+        self.SCREEN_HEIGHT = 512
+        self.GROUND_HEIGHT = 450
+        self.BIRD_X = 50
+        self.BIRD_RADIUS = 15
+        self.PIPE_WIDTH = 40
+
         # Control parameters for game speed and decision making
         self.decision_frequency = 4  # How often the agent makes decisions
         self.frame_count = 0  # Track frames for consistent timing
@@ -17,13 +24,7 @@ class FlappyBird:
         self.FLAP_STRENGTH = -8
         self.PIPE_SPEED = 3
         
-        # Dimensions and constraints
-        self.SCREEN_WIDTH = 288
-        self.SCREEN_HEIGHT = 512
-        self.GROUND_HEIGHT = 450
-        self.BIRD_X = 50
-        self.BIRD_RADIUS = 15
-        self.PIPE_WIDTH = 40
+        self.reset()
 
     def render(self):
         # Initialize screen if not already done
@@ -38,31 +39,31 @@ class FlappyBird:
         
         # Draw ground
         pygame.draw.rect(self.screen, 
-                        (210, 180, 140),  # Sandy color
-                        pygame.Rect(0, self.GROUND_HEIGHT, self.SCREEN_WIDTH, 62))
+                         (210, 180, 140),  # Sandy color
+                         pygame.Rect(0, self.GROUND_HEIGHT, self.SCREEN_WIDTH, 62))
         
         # Draw bird
         pygame.draw.circle(self.screen,
-                         (255, 255, 0),  # Yellow color
-                         (self.BIRD_X, int(self.bird_y)),
-                         self.BIRD_RADIUS)
+                           (255, 255, 0),  # Yellow color
+                           (self.BIRD_X, int(self.bird_y)),
+                           self.BIRD_RADIUS)
         
         # Draw pipes
         for pipe in self.pipes:
             # Draw bottom pipe
             pygame.draw.rect(self.screen,
-                           (34, 139, 34),  # Forest green
-                           pygame.Rect(pipe['x'],
-                                     pipe['bottom_y'],
-                                     self.PIPE_WIDTH,
-                                     self.SCREEN_HEIGHT - pipe['bottom_y']))
+                             (34, 139, 34),  # Forest green
+                             pygame.Rect(pipe['x'],
+                                         pipe['bottom_y'],
+                                         self.PIPE_WIDTH,
+                                         self.SCREEN_HEIGHT - pipe['bottom_y']))
             # Draw top pipe
             pygame.draw.rect(self.screen,
-                           (34, 139, 34),  # Forest green
-                           pygame.Rect(pipe['x'],
-                                     0,
-                                     self.PIPE_WIDTH,
-                                     pipe['top_y']))
+                             (34, 139, 34),  # Forest green
+                             pygame.Rect(pipe['x'],
+                                         0,
+                                         self.PIPE_WIDTH,
+                                         pipe['top_y']))
 
         # Draw score
         text = pygame.font.Font(None, 36).render(f'Score: {self.score}', True, (255, 255, 255))
@@ -146,7 +147,7 @@ class FlappyBird:
 
     def step(self, action):
         # Initialize reward for this step
-        reward = 0.1  # Base reward for surviving
+        reward = 1  # Base reward for surviving
         
         # Apply physics
         self.bird_velocity += self.GRAVITY
@@ -205,7 +206,7 @@ class FlappyBird:
                     self.alive = False
                     # Calculate how bad the collision was
                     collision_distance = min(abs(self.bird_y - pipe['top_y']),
-                                          abs(self.bird_y - pipe['bottom_y']))
+                                             abs(self.bird_y - pipe['bottom_y']))
                     reward = -50 - (collision_distance * 0.2)  # Bigger penalty for worse collisions
 
         # Check for boundary violations

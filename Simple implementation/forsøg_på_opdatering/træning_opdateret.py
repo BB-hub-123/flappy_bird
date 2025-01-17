@@ -15,8 +15,8 @@ def train_flappy(env_class, agent_class):
     """
     # Core training settings
     EPISODES = 40000
-    BATCH_SIZE = 128  # Matched with agent's batch size
-    BUFFER_CAPACITY = 10000
+    BATCH_SIZE = 256  # Matched with agent's batch size
+    BUFFER_CAPACITY = 5000
     WINDOW_SIZE = 100
     
     # Create save directory
@@ -25,7 +25,7 @@ def train_flappy(env_class, agent_class):
     
     # Initialize environment and agent
     env = env_class()
-    agent = agent_class(state_size=5, action_size=2, hidden_size=64)
+    agent = agent_class(state_size=5, action_size=2, hidden_size=128)
     replay_buffer = deque(maxlen=BUFFER_CAPACITY)
     
     # Tracking variables
@@ -59,7 +59,7 @@ def train_flappy(env_class, agent_class):
                 replay_buffer.append((state, action, reward, next_state, done))
                 
                 if len(replay_buffer) >= BATCH_SIZE:
-                    if len(replay_buffer) % 4 == 0:  # Train every 4 steps
+                    
                         batch = random.sample(replay_buffer, BATCH_SIZE)
                         states, actions, rewards, next_states, dones = zip(*batch)
                         agent.train_on_batch(np.array(states), 
@@ -85,7 +85,7 @@ def train_flappy(env_class, agent_class):
                 moving_averages.append(current_avg)
                 
                 # Update visualization every 50 episodes
-                if episode % 50 == 0:
+                if episode % 500 == 0:
                     ax.clear()
                     ax.plot(all_scores[-1000:], 'b.', alpha=0.2, label='Scores')
                     ax.plot(range(len(moving_averages)), moving_averages, 'r-', label='Moving Average')
