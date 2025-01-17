@@ -91,7 +91,7 @@ class FlappyBird:
         
         self.bird_velocity += 0.5  # gravity
         if action == 1:
-            self.bird_velocity = -6  # Beholder den reducerede flap strength
+            self.bird_velocity = -8  
         self.bird_y += self.bird_velocity
 
         # Find afstand til nærmeste rør - med check for tom pipe liste
