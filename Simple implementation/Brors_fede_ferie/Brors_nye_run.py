@@ -26,7 +26,7 @@ class ReplayBuffer:
 def train_flappy():
     # Training settings
     EPISODES = 50000
-    BATCH_SIZE = 256
+    BATCH_SIZE = 128
     BUFFER_CAPACITY = 100000
     PRINT_INTERVAL = 50
     SAVE_WINDOW = 100
@@ -82,16 +82,20 @@ def train_flappy():
                 
                 if current_avg_score > best_avg_score:
                     best_avg_score = current_avg_score
+                    # Find the best single episode score within this window
+                    best_episode_score = max(scores[-SAVE_WINDOW:])
                     torch.save({
                         'episode': episode,
                         'model_state_dict': agent.policy_net.state_dict(),
                         'target_state_dict': agent.target_net.state_dict(),
                         'optimizer_state_dict': agent.optimizer.state_dict(),
-                        'score': current_avg_score,
+                        'score': best_episode_score,  # Save the best individual score
+                        'avg_score': current_avg_score,  # Also save the average for reference
                         'window_size': SAVE_WINDOW,
                         'epsilon': agent.epsilon
                     }, 'flappy_best_model.pth')
                     print(f"\nNew best model saved! Average score over {SAVE_WINDOW} episodes: {current_avg_score:.2f}")
+                    print(f"Best single episode score in this window: {best_episode_score}")
             
             # Print and plot progress
             if (episode + 1) % PRINT_INTERVAL == 0:

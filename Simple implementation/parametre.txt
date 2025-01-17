@@ -1,0 +1,37 @@
+Første gode models parametre:
+
+FRA agent.py:
+3 skjulte lag (ReLU)
+    128 neruoner i hvert lag (hidden_size)
+
+Træningsparametre:
+state_size = 5     (5 parametre, som den tagear højde for i inputlaget, af det neurale netværk)
+learning_rate = 0.00015 
+
+batch_size = 64
+gamma = 0.99
+epsilon = 1.0
+epsilon_min = 0.01
+epsilon_decay = 0.9999
+target_update = 15
+
+
+FRA run_file.py:
+Training-settings:
+EPISODES = 50000
+BATCH_SIZE = 256
+BUFFER_CAPACITY = 100000
+PRINT_INTERVAL = 50
+
+
+FRA simpel_spil.py:
+hop-højden = 6 (kaldes velocity og der står -=6)
+
+
+
+som udgangspunkt fastlåser vi, at vi skal have;
+- 3 skjulte lag
+- 128 neuroner i hvert lag
+
+
+at teste i morgen - batchstørrelse på 128 
