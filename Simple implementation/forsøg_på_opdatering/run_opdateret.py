@@ -153,14 +153,21 @@ def train_flappy(env_class, agent_class):
             with open(f"{save_dir}/history.json", 'w') as f:
                 json.dump(history, f)
             
-            # Print and plot progress
+                            # Print and plot progress
             if (episode + 1) % PRINT_INTERVAL == 0:
-                print(f"Episode: {episode+1}")
-                print(f"Score: {env.score}")
+                plt.close('all')  # Close all figures to prevent memory leaks
+                figure = plt.figure(figsize=(12, 8))
+                
+                print(f"\nEpisode: {episode+1}")
+                print(f"Current Episode Score: {env.score}")
                 print(f"Average Score (last {window_size}): {current_avg_score:.2f}")
-                print(f"Steps: {steps}")
+                if current_avg_score == best_avg_score:
+                    print(f"NEW BEST AVERAGE SCORE achieved in Episode {episode+1}!")
+                print(f"Best Episode Score So Far: {max(scores)} (Episode {scores.index(max(scores)) + 1})")
+                print(f"Steps in Current Episode: {steps}")
                 print(f"Epsilon: {agent.epsilon:.3f}")
                 print(f"Loss: {losses[-1]:.5f}")
+                print(f"Learning Rate: {agent.optimizer.param_groups[0]['lr']:.6f}")
                 print("-" * 50)
                 
                 # Update plots
@@ -239,7 +246,9 @@ def train_flappy(env_class, agent_class):
         pygame.quit()
 
 if __name__ == "__main__":
-    from spil_opdatering import FlappyBird  # Import your FlappyBird environment
-    from agent_opdateret import DQNAgent           # Import your DQNAgent class
+    # Import the environment and agent classes
+    from spil_opdatering import FlappyBird
+    from agent_opdateret import DQNAgent
     
+    # Now call train_flappy with both required arguments
     train_flappy(env_class=FlappyBird, agent_class=DQNAgent)

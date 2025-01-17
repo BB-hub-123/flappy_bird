@@ -40,27 +40,10 @@ class DQN(nn.Module):
         self.dropout = nn.Dropout(0.2)
     
     def forward(self, x):
-        # First layer with normalization and activation
-        x = self.fc1(x)
-        x = self.ln1(x)
-        x = F.relu(x)
-        x = self.dropout(x)
-        
-        # Second layer with residual connection
-        identity = x
-        x = self.fc2(x)
-        x = self.ln2(x)
-        x = F.relu(x)
-        x = self.dropout(x)
-        x = x + identity  # Residual connection helps gradient flow
-        
-        # Third layer with another residual connection
-        identity = x
-        x = self.fc3(x)
-        x = self.ln3(x)
-        x = F.relu(x)
-        x = self.dropout(x)
-        x = x + identity  # Second residual connection
+        # Simplified forward pass while maintaining key improvements
+        x = F.relu(self.ln1(self.fc1(x)))
+        x = F.relu(self.ln2(self.fc2(x)))
+        x = F.relu(self.ln3(self.fc3(x)))
         
         # Output layer (no normalization or activation)
         x = self.fc4(x)
@@ -118,7 +101,7 @@ class DQNAgent:
             if len(state.shape) == 1:
                 state = state.unsqueeze(0)
             state = state.to(self.device)
-                
+            
             # Get Q-values and select best action
             self.policy_net.eval()  # Set to evaluation mode
             q_values = self.policy_net(state)
